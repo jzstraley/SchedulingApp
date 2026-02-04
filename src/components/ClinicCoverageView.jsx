@@ -63,6 +63,8 @@ export default function ClinicCoverageView({
         // 3. PGY-4s cannot cover in blocks 1-4
         if (otherPGY === 4 && blockNum <= FIRST_YEAR_EXCLUSION_BLOCKS) return false;
 
+        // 4. PGY-6s cannot cover in blocks 21-26 (last 3 months)
+        if (otherPGY === 6 && blockNum >= 21) return false;
         return true;
       });
 
