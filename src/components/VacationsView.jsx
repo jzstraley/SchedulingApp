@@ -27,12 +27,6 @@ export default function FellowshipScheduler() {
     'Yousafzai': ['AI 2', 'AI 2', 'Floor B', 'Echo 2', 'Echo 2', 'Nights', 'AI 2', 'AI 2', '', '', 'Cath 2', 'Cath 2', 'Vascular', '', 'CTS', 'Nights', '', 'Admin', 'Structural', '', 'AI 2', 'AI 2', 'SPC', '', 'Research 2', 'Research 2']
   };
 
-  const clinicDays = {
-    'Elkholy': 0, 'Naeem': 2, 'Nor': 2, 'Selvam': 1, 'Varga': 3,
-    'Alkhawlani': 2, 'Ali': 2, 'Elsayed': 0, 'Ezaldin': 1, 'Sharma': 3,
-    'Mahmoud': 2, 'Straley': 1, 'Yousafzai': 0
-  };
-
   // Block dates (2 weeks each)
   const blockDates = [
     { start: '2026-07-01', end: '2026-07-12', rotation: 1 },

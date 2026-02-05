@@ -1,186 +1,187 @@
 // src/components/CalendarView.jsx
-import React from 'react';
-import { blockDates, pgyLevels } from '../data/scheduleData';
-import { getRotationColor } from '../utils/scheduleUtils';
+import React, { useMemo } from "react";
+import { blockDates, pgyLevels } from "../data/scheduleData";
+import { getRotationColor } from "../utils/scheduleUtils";
 
 // --- helpers ---
 const toISODate = (d) => {
   const yyyy = d.getFullYear();
-  const mm = String(d.getMonth() + 1).padStart(2, '0');
-  const dd = String(d.getDate()).padStart(2, '0');
+  const mm = String(d.getMonth() + 1).padStart(2, "0");
+  const dd = String(d.getDate()).padStart(2, "0");
   return `${yyyy}-${mm}-${dd}`;
 };
 
-const addDays = (d, n) => {
-  const x = new Date(d);
-  x.setHours(12, 0, 0, 0);
-  x.setDate(x.getDate() + n);
-  return x;
-};
-
 const abbr = (rotation) => {
-  if (!rotation) return '';
+  if (!rotation) return "";
   const r = rotation.trim().toLowerCase();
-
   const map = {
-    'nuclear': 'Nuc', 'nuclear 2': 'Nuc2', 'nuc': 'Nuc',
-    'floor a': 'F-A', 'floor b': 'F-B',
-    'cath': 'Cath', 'cath 2': 'Cth2', 'cath 3': 'Cth3',
-    'icu': 'ICU', 'echo': 'Echo', 'echo 2': 'Ech2',
-    'ep': 'EP', 'ai': 'AI', 'ai 2': 'AI2', 'ai 3': 'AI3',
-    'structural': 'Str', 'spc': 'SPC', 'cts': 'CTS',
-    'nights': 'Nts', 'float': 'Flt', 'call': 'Call',
-    'vac': 'Vac', 'vacation': 'Vac', 'admin': 'Adm',
-    'research': 'Res', 'research 2': 'Res2', 'vascular': 'Vasc',
-    'off': 'OFF', 'post-call': 'PC',
+    nuclear: "Nuc",
+    "nuclear 2": "Nuc2",
+    nuc: "Nuc",
+    "floor a": "F-A",
+    "floor b": "F-B",
+    cath: "Cath",
+    "cath 2": "Cth2",
+    "cath 3": "Cth3",
+    icu: "ICU",
+    echo: "Echo",
+    "echo 2": "Ech2",
+    ep: "EP",
+    ai: "AI",
+    "ai 2": "AI2",
+    "ai 3": "AI3",
+    structural: "Str",
+    spc: "SPC",
+    cts: "CTS",
+    nights: "Nts",
+    float: "Flt",
+    call: "Call",
+    vac: "Vac",
+    vacation: "Vac",
+    admin: "Adm",
+    research: "Res",
+    "research 2": "Res2",
+    vascular: "Vasc",
+    off: "OFF",
+    "post-call": "PC",
   };
 
   if (map[r]) return map[r];
-  if (r.includes('research')) return 'Res';
-  if (r.includes('floor') && r.includes('a')) return 'F-A';
-  if (r.includes('floor') && r.includes('b')) return 'F-B';
-  if (r.includes('cath') && r.includes('3')) return 'Cth3';
-  if (r.includes('cath') && r.includes('2')) return 'Cth2';
-  if (r.includes('cath')) return 'Cath';
+  if (r.includes("research")) return "Res";
+  if (r.includes("floor") && r.includes("a")) return "F-A";
+  if (r.includes("floor") && r.includes("b")) return "F-B";
+  if (r.includes("cath") && r.includes("3")) return "Cth3";
+  if (r.includes("cath") && r.includes("2")) return "Cth2";
+  if (r.includes("cath")) return "Cath";
 
   return rotation.length <= 5 ? rotation : rotation.slice(0, 5);
 };
 
+const PGYDividerRow = ({ pgy, colSpan }) => (
+  <tr>
+    <td
+      colSpan={colSpan}
+      className="sticky left-0 z-20 bg-white border-y-2 border-gray-400 px-2 py-1 text-[10px] font-extrabold text-gray-700"
+    >
+      PGY-{pgy}
+    </td>
+  </tr>
+);
+
 export default function CalendarView({ fellows, schedule, dateCallMap }) {
-  console.log('dateCallMap:', dateCallMap);  // <-- Here is OK
-  
-  const startDate = new Date(2026, 6, 1, 12);
-  const endDate = new Date(2027, 5, 30, 12);    // Jun 30, 2027
+  const startDate = new Date(2026, 6, 1, 12); // Jul 1 2026
+  const endDate = new Date(2027, 5, 30, 12); // Jun 30 2027
 
-  const allDays = [];
-  let currentDate = new Date(startDate);
-  currentDate.setHours(12, 0, 0, 0);
-  while (currentDate <= endDate) {
-    allDays.push(new Date(currentDate));
-    currentDate.setDate(currentDate.getDate() + 1);
-    currentDate.setHours(12, 0, 0, 0);
-  }
+  const dayNames = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 
-  // Get block index for a given date
-  const getBlockForDate = (date) => {
-    for (let i = 0; i < blockDates.length; i++) {
-      const start = new Date(blockDates[i].start);
-      const end = new Date(blockDates[i].end);
-      start.setHours(0, 0, 0, 0);
-      end.setHours(23, 59, 59, 999);
-      if (date >= start && date <= end) return i;
+  // Build all days once
+  const allDays = useMemo(() => {
+    const out = [];
+    const cur = new Date(startDate);
+    cur.setHours(12, 0, 0, 0);
+    while (cur <= endDate) {
+      out.push(new Date(cur));
+      cur.setDate(cur.getDate() + 1);
+      cur.setHours(12, 0, 0, 0);
     }
-    return null;
-  };
+    return out;
+  }, []);
 
-  // Get rotation for fellow on a given date
+  // Group days by month once
+  const months = useMemo(() => {
+    const m = {};
+    allDays.forEach((day) => {
+      const monthKey = day.toLocaleDateString("en-US", {
+        year: "numeric",
+        month: "long",
+      });
+      if (!m[monthKey]) m[monthKey] = [];
+      m[monthKey].push(day);
+    });
+    return m;
+  }, [allDays]);
+
+  const fellowsByPGY = useMemo(
+    () => ({
+      4: fellows.filter((f) => pgyLevels[f] === 4),
+      5: fellows.filter((f) => pgyLevels[f] === 5),
+      6: fellows.filter((f) => pgyLevels[f] === 6),
+    }),
+    [fellows]
+  );
+
+  // Map date -> block index (cache)
+  const dateToBlockIdx = useMemo(() => {
+    const m = {};
+    for (const day of allDays) {
+      const iso = toISODate(day);
+      let found = null;
+      for (let i = 0; i < blockDates.length; i++) {
+        const start = new Date(blockDates[i].start);
+        const end = new Date(blockDates[i].end);
+        start.setHours(0, 0, 0, 0);
+        end.setHours(23, 59, 59, 999);
+        if (day >= start && day <= end) {
+          found = i;
+          break;
+        }
+      }
+      m[iso] = found;
+    }
+    return m;
+  }, [allDays]);
+
   const getRotationForDate = (fellow, date) => {
-    const blockIdx = getBlockForDate(date);
-    if (blockIdx === null) return null;
+    const iso = toISODate(date);
+    const blockIdx = dateToBlockIdx[iso];
+    if (blockIdx === null || blockIdx === undefined) return null;
     return schedule?.[fellow]?.[blockIdx] ?? null;
   };
 
-// Check if fellow has call/float on a specific date
   const getCallFloatForDate = (fellow, dateISO) => {
-    if (!dateCallMap || Object.keys(dateCallMap).length === 0) return null;
-    
+    if (!dateCallMap) return null;
     const dayData = dateCallMap[dateISO];
     if (!dayData) return null;
-    
-    // Handle various data shapes
-    if (dayData.call === fellow) return 'Call';
-    if (dayData.float === fellow) return 'Float';
-    
-    // Maybe nested differently?
-    if (typeof dayData === 'string' && dayData === fellow) return 'Call';
-    
+
+    if (dayData.call === fellow) return "Call";
+    if (dayData.float === fellow) return "Float";
+    if (typeof dayData === "string" && dayData === fellow) return "Call";
+
     return null;
   };
 
-  // Nights: 6 nights starting Sunday (Sun-Fri working, Sat off)
-  const isNightsWorkDay = (dow) => {
-    // dow: 0=Sun, 1=Mon, 2=Tue, 3=Wed, 4=Thu, 5=Fri, 6=Sat
-    // Working: Sun(0), Mon(1), Tue(2), Wed(3), Thu(4), Fri(5)
-    // Off: Sat(6)
-    return dow !== 6;
-  };
+  const isNightsWorkDay = (dow) => dow !== 6; // Sat off
 
-  // Determine what to display for a cell
   const getCellInfo = (fellow, date) => {
     const dateISO = toISODate(date);
-    const dow = date.getDay(); // 0=Sun, 6=Sat
+    const dow = date.getDay();
     const isWeekend = dow === 0 || dow === 6;
     const rotation = getRotationForDate(fellow, date);
-    const isNights = rotation?.toLowerCase() === 'nights';
+    const isNights = rotation?.toLowerCase() === "nights";
 
-    // 1. Check for Call/Float assignment (these override everything on weekends)
     const callFloat = getCallFloatForDate(fellow, dateISO);
-    if (callFloat === 'Call') {
-      return { label: 'Call', type: 'call', colorClass: 'bg-red-500 text-white' };
+    if (callFloat === "Call") {
+      return { label: "Call", type: "call", colorClass: "bg-red-500 text-white" };
     }
-    if (callFloat === 'Float') {
-      return { label: 'Flt', type: 'float', colorClass: 'bg-purple-600 text-white' };
+    if (callFloat === "Float") {
+      return { label: "Flt", type: "float", colorClass: "bg-purple-600 text-white" };
     }
 
-    // 3. Nights rotation logic: Sun-Fri work (6 nights), Sat off
     if (isNights) {
       if (isNightsWorkDay(dow)) {
-        return { label: 'Nts', type: 'nights', colorClass: 'bg-black text-white' };
-      } else {
-        return { label: '-', type: 'off', colorClass: '' };
+        return { label: "Nts", type: "nights", colorClass: "bg-black text-white" };
       }
+      return { label: "-", type: "off", colorClass: "" };
     }
 
-    // 4. Regular weekend (not on call/float/nights)
-    if (isWeekend) {
-      return { label: '-', type: 'off', colorClass: '' };
-    }
+    if (isWeekend) return { label: "-", type: "off", colorClass: "" };
 
-    // 5. Regular weekday rotation
     if (rotation) {
-      return { label: abbr(rotation), type: 'rotation', colorClass: getRotationColor(rotation) };
+      return { label: abbr(rotation), type: "rotation", colorClass: getRotationColor(rotation) };
     }
 
-    return { label: '', type: 'empty', colorClass: '' };
+    return { label: "", type: "empty", colorClass: "" };
   };
-
-  // Group days by month
-  const months = {};
-  allDays.forEach((day) => {
-    const monthKey = day.toLocaleDateString('en-US', { year: 'numeric', month: 'long' });
-    if (!months[monthKey]) months[monthKey] = [];
-    months[monthKey].push(day);
-  });
-
-  const dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
-
-  // Group fellows by PGY
-  const fellowsByPGY = {
-    4: fellows.filter(f => pgyLevels[f] === 4),
-    5: fellows.filter(f => pgyLevels[f] === 5),
-    6: fellows.filter(f => pgyLevels[f] === 6),
-  };
-
-  const renderFellowRow = (fellow, idx, isLastInGroup) => (
-    <tr
-      key={fellow}
-      className={`${idx % 2 === 0 ? 'bg-white' : 'bg-gray-50'} ${
-        isLastInGroup ? 'border-b-4 border-gray-400' : 'border-b border-gray-200'
-      }`}
-    >
-      <td className="px-1 py-1 font-semibold text-[10px] sticky left-0 bg-inherit border-r-2 border-gray-300 z-10 whitespace-nowrap">
-        {fellow}
-        <span className="text-[8px] text-gray-400 ml-1">
-          {pgyLevels[fellow]}
-        </span>
-      </td>
-
-      {months[Object.keys(months)[0]] && Object.values(months).flat().map((day, dayIdx) => {
-        // This gets recalculated per month render, see below
-        return null;
-      })}
-    </tr>
-  );
 
   return (
     <div className="space-y-4">
@@ -197,53 +198,55 @@ export default function CalendarView({ fellows, schedule, dateCallMap }) {
         </div>
       </div>
 
-      {Object.entries(months).map(([month, days]) => (
-        <div key={month} className="bg-white rounded border-2 border-gray-400 overflow-hidden">
-          <div className="px-3 py-2 bg-gray-100 border-b-2 border-gray-400">
-            <h3 className="font-bold text-sm">{month}</h3>
-          </div>
+      {Object.entries(months).map(([month, days]) => {
+        const colSpan = 1 + days.length;
 
-          <div className="p-2 overflow-x-auto">
-            <table className="w-full text-[9px] border-collapse">
-              <thead>
-                <tr className="bg-gray-200 border-b-2 border-gray-400">
-                  <th className="px-1 py-1 text-left font-bold sticky left-0 bg-gray-200 z-10 min-w-[70px] border-r-2 border-gray-300">
-                    Fellow
-                  </th>
-                  {days.map((day, idx) => {
-                    const dow = day.getDay();
-                    const isWeekend = dow === 0 || dow === 6;
-                    const isSunday = dow === 0;
-                    return (
-                      <th
-                        key={idx}
-                        className={`px-0.5 py-1 text-center font-bold min-w-[32px] ${
-                          isWeekend ? 'bg-yellow-100' : ''
-                        } ${isSunday ? 'border-l-2 border-gray-400' : 'border-l border-gray-200'}`}
-                      >
-                        <div className="text-[7px] text-gray-500">{dayNames[dow]}</div>
-                        <div className="text-[9px]">{day.getDate()}</div>
-                      </th>
-                    );
-                  })}
-                </tr>
-              </thead>
+        return (
+          <div key={month} className="bg-white rounded border-2 border-gray-400 overflow-hidden">
+            {/* Sticky-ish month title for readability */}
+            <div className="px-3 py-2 bg-gray-100 border-b-2 border-gray-400">
+              <h3 className="font-bold text-sm">{month}</h3>
+            </div>
 
-              <tbody>
-                {/* PGY-4 */}
-                {fellowsByPGY[4].map((fellow, idx) => {
-                  const isLast = idx === fellowsByPGY[4].length - 1;
-                  return (
+            {/* One scroll container per month, supports sticky header + sticky first col */}
+            <div className="overflow-auto max-h-[calc(100vh-320px)]">
+              <table className="w-full text-[9px] border-separate border-spacing-0">
+                <thead>
+                  <tr className="bg-gray-200 border-b-2 border-gray-400 sticky top-0 z-30">
+                    <th className="px-1 py-1 text-left font-bold sticky top-0 left-0 z-40 bg-gray-200 min-w-[90px] border-r-2 border-gray-300">
+                      Fellow
+                    </th>
+                    {days.map((day, idx) => {
+                      const dow = day.getDay();
+                      const isWeekend = dow === 0 || dow === 6;
+                      const isSunday = dow === 0;
+                      return (
+                        <th
+                          key={idx}
+                          className={`px-0.5 py-1 text-center font-bold min-w-[32px] sticky top-0 z-30 bg-gray-200 ${
+                            isWeekend ? "bg-yellow-100" : ""
+                          } ${isSunday ? "border-l-2 border-gray-400" : "border-l border-gray-200"}`}
+                        >
+                          <div className="text-[7px] text-gray-500">{dayNames[dow]}</div>
+                          <div className="text-[9px]">{day.getDate()}</div>
+                        </th>
+                      );
+                    })}
+                  </tr>
+                </thead>
+
+                <tbody>
+                  <PGYDividerRow pgy={4} colSpan={colSpan} />
+                  {fellowsByPGY[4].map((fellow, idx) => (
                     <tr
                       key={fellow}
-                      className={`${idx % 2 === 0 ? 'bg-white' : 'bg-gray-50'} ${
-                        isLast ? 'border-b-4 border-blue-400' : 'border-b border-gray-200'
-                      }`}
+                      className={`${idx % 2 === 0 ? "bg-white" : "bg-gray-50"} border-b border-gray-200`}
                     >
-                      <td className="px-1 py-1 font-semibold text-[10px] sticky left-0 bg-inherit border-r-2 border-gray-300 z-10 whitespace-nowrap">
+                      <td className="px-1 py-1 font-semibold text-[10px] sticky left-0 z-10 bg-inherit border-r-2 border-gray-300 whitespace-nowrap">
                         <span className="text-blue-600">{fellow}</span>
                         <span className="text-[7px] text-blue-400 ml-0.5">4</span>
                       </td>
+
                       {days.map((day, dayIdx) => {
                         const dow = day.getDay();
                         const isWeekend = dow === 0 || dow === 6;
@@ -254,37 +257,33 @@ export default function CalendarView({ fellows, schedule, dateCallMap }) {
                           <td
                             key={dayIdx}
                             className={`px-0 py-0.5 text-center ${
-                              isWeekend ? 'bg-yellow-50' : ''
-                            } ${isSunday ? 'border-l-2 border-gray-400' : 'border-l border-gray-100'}`}
+                              isWeekend ? "bg-yellow-50" : ""
+                            } ${isSunday ? "border-l-2 border-gray-400" : "border-l border-gray-100"}`}
                           >
-                            {cellInfo.type !== 'off' && cellInfo.type !== 'empty' ? (
+                            {cellInfo.type !== "off" && cellInfo.type !== "empty" ? (
                               <div className={`mx-0.5 px-0.5 py-0.5 rounded text-[7px] font-bold ${cellInfo.colorClass}`}>
                                 {cellInfo.label}
                               </div>
-                            ) : cellInfo.type === 'off' ? (
+                            ) : cellInfo.type === "off" ? (
                               <div className="text-[8px] text-gray-300">-</div>
                             ) : null}
                           </td>
                         );
                       })}
                     </tr>
-                  );
-                })}
+                  ))}
 
-                {/* PGY-5 */}
-                {fellowsByPGY[5].map((fellow, idx) => {
-                  const isLast = idx === fellowsByPGY[5].length - 1;
-                  return (
+                  <PGYDividerRow pgy={5} colSpan={colSpan} />
+                  {fellowsByPGY[5].map((fellow, idx) => (
                     <tr
                       key={fellow}
-                      className={`${idx % 2 === 0 ? 'bg-white' : 'bg-gray-50'} ${
-                        isLast ? 'border-b-4 border-green-400' : 'border-b border-gray-200'
-                      }`}
+                      className={`${idx % 2 === 0 ? "bg-white" : "bg-gray-50"} border-b border-gray-200`}
                     >
-                      <td className="px-1 py-1 font-semibold text-[10px] sticky left-0 bg-inherit border-r-2 border-gray-300 z-10 whitespace-nowrap">
+                      <td className="px-1 py-1 font-semibold text-[10px] sticky left-0 z-10 bg-inherit border-r-2 border-gray-300 whitespace-nowrap">
                         <span className="text-green-600">{fellow}</span>
                         <span className="text-[7px] text-green-400 ml-0.5">5</span>
                       </td>
+
                       {days.map((day, dayIdx) => {
                         const dow = day.getDay();
                         const isWeekend = dow === 0 || dow === 6;
@@ -295,37 +294,33 @@ export default function CalendarView({ fellows, schedule, dateCallMap }) {
                           <td
                             key={dayIdx}
                             className={`px-0 py-0.5 text-center ${
-                              isWeekend ? 'bg-yellow-50' : ''
-                            } ${isSunday ? 'border-l-2 border-gray-400' : 'border-l border-gray-100'}`}
+                              isWeekend ? "bg-yellow-50" : ""
+                            } ${isSunday ? "border-l-2 border-gray-400" : "border-l border-gray-100"}`}
                           >
-                            {cellInfo.type !== 'off' && cellInfo.type !== 'empty' ? (
+                            {cellInfo.type !== "off" && cellInfo.type !== "empty" ? (
                               <div className={`mx-0.5 px-0.5 py-0.5 rounded text-[7px] font-bold ${cellInfo.colorClass}`}>
                                 {cellInfo.label}
                               </div>
-                            ) : cellInfo.type === 'off' ? (
+                            ) : cellInfo.type === "off" ? (
                               <div className="text-[8px] text-gray-300">-</div>
                             ) : null}
                           </td>
                         );
                       })}
                     </tr>
-                  );
-                })}
+                  ))}
 
-                {/* PGY-6 */}
-                {fellowsByPGY[6].map((fellow, idx) => {
-                  const isLast = idx === fellowsByPGY[6].length - 1;
-                  return (
+                  <PGYDividerRow pgy={6} colSpan={colSpan} />
+                  {fellowsByPGY[6].map((fellow, idx) => (
                     <tr
                       key={fellow}
-                      className={`${idx % 2 === 0 ? 'bg-white' : 'bg-gray-50'} ${
-                        isLast ? '' : 'border-b border-gray-200'
-                      }`}
+                      className={`${idx % 2 === 0 ? "bg-white" : "bg-gray-50"} border-b border-gray-200`}
                     >
-                      <td className="px-1 py-1 font-semibold text-[10px] sticky left-0 bg-inherit border-r-2 border-gray-300 z-10 whitespace-nowrap">
+                      <td className="px-1 py-1 font-semibold text-[10px] sticky left-0 z-10 bg-inherit border-r-2 border-gray-300 whitespace-nowrap">
                         <span className="text-purple-600">{fellow}</span>
                         <span className="text-[7px] text-purple-400 ml-0.5">6</span>
                       </td>
+
                       {days.map((day, dayIdx) => {
                         const dow = day.getDay();
                         const isWeekend = dow === 0 || dow === 6;
@@ -336,27 +331,27 @@ export default function CalendarView({ fellows, schedule, dateCallMap }) {
                           <td
                             key={dayIdx}
                             className={`px-0 py-0.5 text-center ${
-                              isWeekend ? 'bg-yellow-50' : ''
-                            } ${isSunday ? 'border-l-2 border-gray-400' : 'border-l border-gray-100'}`}
+                              isWeekend ? "bg-yellow-50" : ""
+                            } ${isSunday ? "border-l-2 border-gray-400" : "border-l border-gray-100"}`}
                           >
-                            {cellInfo.type !== 'off' && cellInfo.type !== 'empty' ? (
+                            {cellInfo.type !== "off" && cellInfo.type !== "empty" ? (
                               <div className={`mx-0.5 px-0.5 py-0.5 rounded text-[7px] font-bold ${cellInfo.colorClass}`}>
                                 {cellInfo.label}
                               </div>
-                            ) : cellInfo.type === 'off' ? (
+                            ) : cellInfo.type === "off" ? (
                               <div className="text-[8px] text-gray-300">-</div>
                             ) : null}
                           </td>
                         );
                       })}
                     </tr>
-                  );
-                })}
-              </tbody>
-            </table>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           </div>
-        </div>
-      ))}
+        );
+      })}
     </div>
   );
 }

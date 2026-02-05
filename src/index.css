@@ -1,1 +1,20 @@
 @import "tailwindcss";
+/* Mobile-friendly tables */
+@media (max-width: 768px) {
+  table {
+    display: block;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+  
+  /* Larger touch targets */
+  button, select, input {
+    min-height: 44px;
+    min-width: 44px;
+  }
+  
+  /* Prevent text from being too small */
+  td, th {
+    white-space: nowrap;
+  }
+}

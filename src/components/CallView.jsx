@@ -214,7 +214,7 @@ const exportCallFloatCSV = () => {
 
   return (
     <div className="space-y-3">
-      <div className="flex justify-end gap-2">
+      <div className="flex justify-end">
         <button
           onClick={() => onOptimize?.()}
           className="flex items-center gap-1 px-3 py-1 bg-purple-600 hover:bg-purple-700 text-white text-xs font-semibold rounded"
@@ -222,15 +222,6 @@ const exportCallFloatCSV = () => {
         >
           <TrendingUp className="w-3 h-3" />
           Optimize
-        </button>
-
-        <button
-          onClick={exportCallFloatCSV}
-          className="flex items-center gap-1 px-3 py-1 bg-gray-800 hover:bg-gray-900 text-white text-xs font-semibold rounded"
-          type="button"
-        >
-          <Download className="w-3 h-3" />
-          CSV
         </button>
       </div>
 
@@ -411,6 +402,21 @@ const exportCallFloatCSV = () => {
           </div>
         </div>
       )}
+
+      {/* Export Section */}
+      <div className="bg-white rounded border-2 border-gray-400 overflow-hidden">
+        <div className="px-3 py-2 bg-gray-50 flex items-center justify-between">
+          <span className="text-xs text-gray-600">Export call/float schedule</span>
+          <button
+            onClick={exportCallFloatCSV}
+            className="flex items-center gap-1 px-3 py-1 bg-gray-800 hover:bg-gray-900 text-white text-xs font-semibold rounded"
+            type="button"
+          >
+            <Download className="w-3 h-3" />
+            Export CSV
+          </button>
+        </div>
+      </div>
     </div>
   );
 }

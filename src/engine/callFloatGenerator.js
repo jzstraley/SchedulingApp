@@ -103,6 +103,9 @@ export function generateCallAndFloat({
     // cannot call if going to Nights next block
     if (blockIdx < nBlocks - 1 && schedule[fellow]?.[blockIdx + 1] === "Nights") return false;
 
+    // cannot call if on Nights this block (night float weekend)
+    if (rot === "Nights") return false;
+
     return true;
   };
 
@@ -176,18 +179,33 @@ export function generateCallAndFloat({
     return false;
   };
 
+// Cannot be assigned BOTH call AND float on the same weekend
+  const violatesCallFloatSameWeekend = (callSched, floatSched, fellow, blockIdx, weekend) => {
+    const key = keyFor(blockIdx, weekend);
+    // If assigning call, check if already has float
+    if (callSched[key]?.name === fellow) return true;
+    // If assigning float, check if already has call
+    if (floatSched[key]?.name === fellow) return true;
+    return false;
+  };
+
   // ---------------- scoring ----------------
   const floatScore = (floatCounts, fellow, preferred) => {
     const pgy = pgyLevels[fellow];
     const target = floatTargets[pgy] ?? 1;
     const ratio = floatCounts[fellow] / Math.max(target, 1);
-    return ratio - (preferred ? 0.25 : 0) + Math.random() * 0.01;
+    // PGY-4 gets priority (lower score = picked first)
+    const pgyBonus = pgy === 4 ? -0.15 : pgy === 5 ? 0 : 0.15;
+    return ratio + pgyBonus - (preferred ? 0.25 : 0) + Math.random() * 0.01;
   };
 
   const callScore = (callCounts, fellow) => {
     const pgy = pgyLevels[fellow];
     const target = callTargets[pgy] ?? 1;
-    return callCounts[fellow] / Math.max(target, 1) + Math.random() * 0.01;
+    const ratio = callCounts[fellow] / Math.max(target, 1);
+    // PGY-4 gets priority (lower score = picked first)
+    const pgyBonus = pgy === 4 ? -0.15 : pgy === 5 ? 0 : 0.15;
+    return ratio + pgyBonus + Math.random() * 0.01;
   };
 
   // ---------------- attempt runner ----------------
@@ -268,8 +286,10 @@ export function generateCallAndFloat({
           if (!eligibleCall(f, blockIdx)) return false;
           if (violatesAdjacencySameBlock(callSchedule, f, blockIdx, "call")) return false;
           if (violatesAdjacencyConsecutive(callSchedule, f, blockIdx, weekend, "call")) return false;
-          return true;
-        });
+          // Cannot be both call and float same weekend
+          if (violatesCallFloatSameWeekend(callSchedule, floatSchedule, f, blockIdx, weekend)) return false;
+            return true;
+          });
 
         if (candidates.length) {
           candidates.sort((a, b) => callScore(callCounts, a) - callScore(callCounts, b));
@@ -341,6 +361,7 @@ export function generateCallAndFloat({
         if (!eligibleFloatRelaxed(f, blockIdx)) return false;
         if (violatesAdjacencySameBlock(best.floatSchedule, f, blockIdx, "float")) return false;
         if (violatesAdjacencyConsecutive(best.floatSchedule, f, blockIdx, weekend, "float")) return false;
+        if (violatesCallFloatSameWeekend(best.callSchedule, best.floatSchedule, f, blockIdx, weekend)) return false;
         return true;
       });
 
@@ -359,6 +380,7 @@ export function generateCallAndFloat({
           if (!eligibleFloatRelaxed(f, blockIdx)) return false;
           if (violatesAdjacencySameBlock(best.floatSchedule, f, blockIdx, "float")) return false;
           if (violatesAdjacencyConsecutive(best.floatSchedule, f, blockIdx, weekend, "float")) return false;
+          if (violatesCallFloatSameWeekend(best.callSchedule, best.floatSchedule, f, blockIdx, weekend)) return false;
           return true;
         });
         if (candidates.length) {
@@ -453,6 +475,7 @@ export function generateCallAndFloat({
         if (!eligibleCall(f, blockIdx)) return false;
         if (violatesAdjacencySameBlock(best.callSchedule, f, blockIdx, "call")) return false;
         if (violatesAdjacencyConsecutive(best.callSchedule, f, blockIdx, weekend, "call")) return false;
+        if (violatesCallFloatSameWeekend(best.callSchedule, best.floatSchedule, f, blockIdx, weekend)) return false;
 
         if (pgy === 6 && best.callCounts[f] >= (callTargets[pgy] ?? 999)) return false;
         return best.callCounts[f] < (callTargets[pgy] ?? 999);
@@ -476,6 +499,7 @@ export function generateCallAndFloat({
           if (!eligibleCall(f, blockIdx)) return false;
           if (violatesAdjacencySameBlock(best.callSchedule, f, blockIdx, "call")) return false;
           if (violatesAdjacencyConsecutive(best.callSchedule, f, blockIdx, weekend, "call")) return false;
+          if (violatesCallFloatSameWeekend(best.callSchedule, best.floatSchedule, f, blockIdx, weekend)) return false;
           return true;
         });
 

@@ -6,8 +6,10 @@ import CallView from "./components/CallView";
 import CalendarView from "./components/CalendarView";
 import HeaderBar from "./components/HeaderBar";
 import ClinicCoverageView from "./components/ClinicCoverageView";
+import ImportExportBar from "./components/ImportExportBar";
 import { initialSchedule, initialVacations, pgyLevels, clinicDays, blockDates } from "./data/scheduleData";
 import { generateCallAndFloat as runGenerator } from "./engine/callFloatGenerator";
+import LandingPage from "./components/LandingPage";
 
 const STORAGE_KEY = "fellowship_scheduler_v1";
 
@@ -28,6 +30,13 @@ const loadPersisted = () => {
 const savePersisted = (payload) => {
   localStorage.setItem(STORAGE_KEY, JSON.stringify(payload));
 };
+
+// Subtle footer
+const Footer = () => (
+  <footer className="py-1 text-center text-[9px] text-gray-300">
+    © {new Date().getFullYear()} Austin Holifield, MD
+  </footer>
+);
 
 export default function App() {
   const [activeView, setActiveView] = useState("schedule");
@@ -126,7 +135,6 @@ export default function App() {
       const w2SatISO = toISODate(sat2);
       const w2SunISO = toISODate(addDays(sat2, 1));
 
-      // Call on Sat + Sun
       if (c1.name) {
         map[w1SatISO] = { ...map[w1SatISO], call: c1.name };
         map[w1SunISO] = { ...map[w1SunISO], call: c1.name };
@@ -136,7 +144,6 @@ export default function App() {
         map[w2SunISO] = { ...map[w2SunISO], call: c2.name };
       }
 
-      // Float on Sat only
       if (f1.name) {
         map[w1SatISO] = { ...map[w1SatISO], float: f1.name };
       }
@@ -307,20 +314,21 @@ export default function App() {
     }
   }, [stats, fellows]);
 
+  const [showLanding, setShowLanding] = useState(true);
+
+  if (showLanding) {
+    return <LandingPage onEnter={() => setShowLanding(false)} />;
+  }
+
   return (
     <div className="min-h-screen bg-gray-50">
       <HeaderBar
         activeView={activeView}
         setActiveView={setActiveView}
-        fellows={fellows}
-        schedule={schedule}
-        setSchedule={setSchedule}
-        resetToDefaults={resetToDefaults}
-        violations={violations}
         checkBalance={checkBalance}
       />
 
-      <div className="p-3">
+      <div className="p-3 pb-16">
         {activeView === "schedule" && (
           <ScheduleView
             fellows={fellows}
@@ -361,7 +369,21 @@ export default function App() {
             blockDates={blockDates}
           />
         )}
+
+        {/* Global Import/Export/Reset bar - shows on all pages */}
+        <div className="mt-4 p-3 bg-white rounded border border-gray-300 flex items-center justify-between">
+          <span className="text-xs text-gray-500">Import/Export Schedule Data</span>
+          <ImportExportBar
+            fellows={fellows}
+            schedule={schedule}
+            setSchedule={setSchedule}
+            resetToDefaults={resetToDefaults}
+            violations={violations}
+          />
+        </div>
       </div>
+
+      <Footer />
     </div>
   );
 }
