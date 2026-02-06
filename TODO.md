@@ -30,7 +30,9 @@
 - [ ] Dark light icon not centered
 - [ ] Background for tables not dark
 - [ ] Remove inport/export/reset from vacations tab
-- [ ] New color "Drag to swap rotations. Click a name, header, or cell to highlight. Toggle Vacation Mode to paint vacation blocks."
+- [ ] New color Drag to swap rotations. 
+- [ ] Click a name, header, or cell to highlight. 
+- [ ] Toggle Vacation Mode to paint vacation blocks.
 
 ---
 
@@ -85,4 +87,40 @@
 
 ---
 
-*Last updated: Feb 4, 2026*
+For 50 fellowship users with team schedules, here's what I'd recommend:
+Architecture:
+
+React frontend with calendar/scheduler component
+Supabase or Postgres database
+Role-based access (fellows, chiefs, admins)
+Real-time updates when schedules change
+
+Data structure:
+Users table: user_id, name, fellowship_program, role
+Schedules table: schedule_id, program_id, date, user_id, shift_type, location
+Programs table: program_id, program_name (cardiology, etc.)
+Key features for medical scheduling:
+
+Calendar view (monthly/weekly)
+Shift types (call, clinic, cath lab, CCU, consults)
+Rotation tracking
+Swap requests between fellows
+Export to personal calendar (iCal)
+Duty hour tracking (ACGME compliance)
+
+React scheduler libraries:
+
+FullCalendar - most feature-rich
+React Big Calendar - simpler, good for basic needs
+DayPilot - medical-specific features
+
+Access control:
+
+Fellows see their own program's schedule
+Chiefs can edit their program
+Program directors see all
+
+Tech stack:
+React + FullCalendar + Supabase + Vercel
+This handles 50 users easily and scales well. Real-time updates mean everyone sees schedule changes immediately.
+Want help setting up the database schema or picking a calendar component?

@@ -90,14 +90,14 @@ const CANNOT_COVER_ROTATIONS = [
   return (
     <div className="space-y-4">
       {/* Summary */}
-      <div className="bg-white rounded border-2 border-gray-400 p-3">
+      <div className="bg-white dark:bg-gray-800 rounded border-2 border-gray-400 dark:border-gray-600 p-3">
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2">
           <div className="flex flex-wrap items-center gap-4">
-            <div className="text-sm">
+            <div className="text-sm dark:text-gray-200">
               <span className="font-bold">{coverageEntries.length}</span> weekly coverage slots
             </div>
 
-            <div className="text-sm text-gray-600">
+            <div className="text-sm text-gray-600 dark:text-gray-400">
               Assigned: <span className="font-bold">{totalAssignments}</span> (Target total:{" "}
               <span className="font-bold">{targetTotal}</span>)
             </div>

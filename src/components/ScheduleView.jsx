@@ -72,7 +72,7 @@ const PGYDividerRow = ({ pgy, colSpan }) => (
   <tr>
     <td
       colSpan={colSpan}
-      className="sticky left-0 z-20 bg-white border-y-2 border-gray-400 px-2 py-1 text-xs font-extrabold text-gray-700"
+      className="sticky left-0 z-20 bg-white dark:bg-gray-800 border-y-2 border-gray-400 dark:border-gray-600 px-2 py-1 text-xs font-extrabold text-gray-700 dark:text-gray-200"
     >
       PGY-{pgy}
     </td>
@@ -146,11 +146,25 @@ export default function ScheduleView({
     typeof window !== "undefined" &&
     ("ontouchstart" in window || navigator.maxTouchPoints > 0);
 
+  // Precompute vacation set for O(1) checks: keys like "Fellow#blockNumber"
+  const vacationSet = useMemo(() => {
+    const s = new Set();
+    (vacations || []).forEach((v) => {
+      if (v.reason !== "Vacation") return;
+      for (let b = v.startBlock; b <= v.endBlock; b++) {
+        s.add(`${v.fellow}#${b}`);
+      }
+    });
+    return s;
+  }, [vacations]);
+
+  const isBlockInVacationFast = (fellow, blockNumber) => vacationSet.has(`${fellow}#${blockNumber}`);
+
   const handleDragStart = (fellow, blockIdx) => {
     if (vacMode) return;
 
     const blockNumber = blockIdx + 1;
-    if (isBlockInVacation(vacations, fellow, blockNumber)) {
+    if (isBlockInVacationFast(fellow, blockNumber)) {
       setValidationWarning(
         "Can't drag a vacation block. Toggle Vacation Mode to edit vacation."
       );
@@ -171,12 +185,8 @@ export default function ScheduleView({
     const fromBlockNumber = draggedCell.blockIdx + 1;
     const toBlockNumber = targetBlockIdx + 1;
 
-    const fromIsVac = isBlockInVacation(
-      vacations,
-      draggedCell.fellow,
-      fromBlockNumber
-    );
-    const toIsVac = isBlockInVacation(vacations, targetFellow, toBlockNumber);
+    const fromIsVac = isBlockInVacationFast(draggedCell.fellow, fromBlockNumber);
+    const toIsVac = isBlockInVacationFast(targetFellow, toBlockNumber);
 
     if (fromIsVac || toIsVac) {
       setValidationWarning(
@@ -205,7 +215,7 @@ export default function ScheduleView({
     if (vacMode) return;
 
     const blockNumber = blockIdx + 1;
-    const isVac = isBlockInVacation(vacations, fellow, blockNumber);
+    const isVac = isBlockInVacationFast(fellow, blockNumber);
 
     if (isVac) {
       setValidationWarning(
@@ -220,12 +230,8 @@ export default function ScheduleView({
     } else if (selectedCell.fellow === fellow && selectedCell.blockIdx === blockIdx) {
       setSelectedCell(null);
     } else {
-      const fromIsVac = isBlockInVacation(
-        vacations,
-        selectedCell.fellow,
-        selectedCell.blockIdx + 1
-      );
-      const toIsVac = isBlockInVacation(vacations, fellow, blockNumber);
+      const fromIsVac = isBlockInVacationFast(selectedCell.fellow, selectedCell.blockIdx + 1);
+      const toIsVac = isBlockInVacationFast(fellow, blockNumber);
 
       if (fromIsVac || toIsVac) {
         setValidationWarning("Can't swap into or out of a vacation block.");
@@ -322,7 +328,7 @@ export default function ScheduleView({
 
         {schedule[fellow]?.map((rot, idx) => {
           const blockNumber = idx + 1;
-          const isVac = isBlockInVacation(vacations, fellow, blockNumber);
+          const isVac = isBlockInVacationFast(fellow, blockNumber);
           const isSelected =
             selectedCell?.fellow === fellow && selectedCell?.blockIdx === idx;
 
@@ -343,13 +349,13 @@ export default function ScheduleView({
 
           // Vacation styling: muted gradient + watermark name
           const vacStyle = isVac
-            ? "bg-gradient-to-br from-gray-200 to-gray-100 text-gray-700 opacity-95"
+            ? "bg-gradient-to-br from-gray-200 to-gray-100 dark:from-gray-600 dark:to-gray-700 text-gray-700 dark:text-gray-200 opacity-95"
             : "";
 
           return (
             <td
               key={idx}
-              className={`border-r border-gray-200 px-0.5 py-0.5 text-center transition-opacity ${
+              className={`border-r border-gray-200 dark:border-gray-700 px-0.5 py-0.5 text-center transition-opacity ${
                 fadeCell ? "opacity-30" : "opacity-100"
               } ${
                 vacMode
@@ -407,32 +413,32 @@ export default function ScheduleView({
       onMouseLeave={handleMouseUpAnywhere}
     >
       {validationWarning && (
-        <div className="bg-red-50 border-2 border-red-300 rounded p-2 text-xs text-red-800">
+        <div className="bg-red-50 dark:bg-red-950 border-2 border-red-300 dark:border-red-700 rounded p-2 text-xs text-red-800 dark:text-red-200">
           ⚠️ {validationWarning}
         </div>
       )}
 
       {selectedCell && (
-        <div className="bg-blue-50 border-2 border-blue-300 rounded p-2 text-xs text-blue-800">
+        <div className="bg-blue-50 dark:bg-blue-950 border-2 border-blue-300 dark:border-blue-700 rounded p-2 text-xs text-blue-800 dark:text-blue-200">
           📍 Selected: {selectedCell.fellow} Block {selectedCell.blockIdx + 1} —
           Tap another cell to swap
         </div>
       )}
 
       {highlight && (
-        <div className="bg-gray-50 border-2 border-gray-200 rounded p-2 text-xs text-gray-800 flex items-center justify-between gap-2">
+        <div className="bg-gray-50 dark:bg-gray-800 border-2 border-gray-200 dark:border-gray-600 rounded p-2 text-xs text-gray-800 dark:text-gray-200 flex items-center justify-between gap-2">
           <div className="truncate">
             🔦 Highlighting:{" "}
             {highlight.type === "fellow" && `Fellow ${highlight.fellow}`}
             {highlight.type === "rotation" && `Rotation ${highlight.rotation}`}
             {highlight.type === "col" && `Block ${highlight.idx + 1}`}
-            <span className="ml-2 text-[10px] text-gray-500">
+            <span className="ml-2 text-[10px] text-gray-500 dark:text-gray-400">
               (click again to clear)
             </span>
           </div>
           <button
             type="button"
-            className="px-2 py-1 text-[10px] font-semibold rounded border bg-white border-gray-300"
+            className="px-2 py-1 text-[10px] font-semibold rounded border bg-white dark:bg-gray-700 border-gray-300 dark:border-gray-600 text-gray-800 dark:text-gray-200"
             onClick={() => setHighlight(null)}
           >
             Clear
@@ -441,7 +447,7 @@ export default function ScheduleView({
       )}
 
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2">
-        <div className="text-xs text-gray-700 font-semibold">
+        <div className="text-xs text-gray-700 dark:text-gray-300 font-semibold">
           {isTouchDevice
             ? "Tap to select, tap another to swap."
             : "Drag to swap rotations. Click a name, header, or cell to highlight."}{" "}
@@ -460,7 +466,7 @@ export default function ScheduleView({
           className={`px-4 py-2 text-xs font-semibold rounded border min-h-[44px] ${
             vacMode
               ? "bg-red-600 text-white border-red-700"
-              : "bg-white text-gray-800 border-gray-300"
+              : "bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-200 border-gray-300 dark:border-gray-600"
           }`}
           title="When on, click-drag cells to mark vacation blocks"
         >
@@ -491,8 +497,8 @@ export default function ScheduleView({
               </tr>
 
               {/* Block header row (sticky under first header row) */}
-              <tr className="bg-gray-200 border-b-2 border-gray-400 sticky top-[26px] z-30">
-                <th className="sticky left-0 top-[26px] z-40 bg-gray-200 border-r-2 border-gray-400 px-2 py-1 text-left font-bold min-w-[96px]">
+              <tr className="bg-gray-200 dark:bg-gray-700 border-b-2 border-gray-400 dark:border-gray-600 sticky top-[26px] z-30">
+                <th className="sticky left-0 top-[26px] z-40 bg-gray-200 dark:bg-gray-700 border-r-2 border-gray-400 dark:border-gray-600 px-2 py-1 text-left font-bold min-w-[96px] dark:text-gray-100">
                   Fellow
                 </th>
                 {blockDates.map((bd, i) => (
@@ -505,13 +511,13 @@ export default function ScheduleView({
                       setValidationWarning(null);
                       toggleHighlight({ type: "col", idx: i });
                     }}
-                    className={`sticky top-[26px] z-30 bg-gray-200 border-r border-gray-300 px-1 py-1 text-center min-w-[60px] cursor-pointer ${
+                    className={`sticky top-[26px] z-30 bg-gray-200 dark:bg-gray-700 border-r border-gray-300 dark:border-gray-600 px-1 py-1 text-center min-w-[60px] cursor-pointer ${
                       isColHot(i) ? "ring-2 ring-blue-500" : ""
                     }`}
                     title="Click to highlight this block column (click again to clear)"
                   >
-                    <div className="font-bold">{bd.block}</div>
-                    <div className="text-[8px] text-gray-600 whitespace-nowrap">
+                    <div className="font-bold dark:text-gray-100">{bd.block}</div>
+                    <div className="text-[8px] text-gray-700 dark:text-gray-300 whitespace-nowrap font-semibold">
                       {formatDate(bd.start)}-{formatDate(bd.end)}
                     </div>
                   </th>

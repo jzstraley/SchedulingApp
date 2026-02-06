@@ -225,26 +225,26 @@ const exportCallFloatCSV = () => {
         </button>
       </div>
 
-      <div className="bg-white rounded border-2 border-gray-400 overflow-hidden">
-        <div className="px-3 py-2 bg-gray-100 border-b-2 border-gray-400">
-          <h3 className="font-bold text-sm">Call Weekend & Saturday Night Float Assignments</h3>
-          <p className="text-[10px] text-gray-600">
+      <div className="bg-white dark:bg-gray-800 rounded border-2 border-gray-400 dark:border-gray-600 overflow-hidden">
+        <div className="px-3 py-2 bg-gray-100 dark:bg-gray-700 border-b-2 border-gray-400 dark:border-gray-600">
+          <h3 className="font-bold text-sm dark:text-gray-100">Call Weekend & Saturday Night Float Assignments</h3>
+          <p className="text-[10px] text-gray-600 dark:text-gray-400">
             Strict calls are blue, strict floats are black. Relaxed fallback is red. Missing coverage is flagged.
           </p>
         </div>
 
         <div className="p-2">
           <div className="overflow-x-auto">
-            <table className="w-full text-[10px]">
+            <table className="w-full text-xs">
               <thead>
-                <tr className="bg-gray-200 border-b border-gray-400">
-                  <th className="px-2 py-1 text-left font-bold">Block</th>
-                  <th className="px-2 py-1 text-left font-bold">Wknd 1 (Sat/Sun)</th>
-                  <th className="px-2 py-1 text-left font-bold">W1 Call</th>
-                  <th className="px-2 py-1 text-left font-bold">W1 Sat Night Float</th>
-                  <th className="px-2 py-1 text-left font-bold">Wknd 2 (Sat/Sun)</th>
-                  <th className="px-2 py-1 text-left font-bold">W2 Call</th>
-                  <th className="px-2 py-1 text-left font-bold">W2 Sat Night Float</th>
+                <tr className="bg-gray-200 dark:bg-gray-700 border-b border-gray-400 dark:border-gray-600">
+                  <th className="px-2 py-1 text-left font-bold dark:text-gray-100">Block</th>
+                  <th className="px-2 py-1 text-left font-bold dark:text-gray-100">Wknd 1 (Sat/Sun)</th>
+                  <th className="px-2 py-1 text-left font-bold dark:text-gray-100">W1 Call</th>
+                  <th className="px-2 py-1 text-left font-bold dark:text-gray-100">W1 Sat Night Float</th>
+                  <th className="px-2 py-1 text-left font-bold dark:text-gray-100">Wknd 2 (Sat/Sun)</th>
+                  <th className="px-2 py-1 text-left font-bold dark:text-gray-100">W2 Call</th>
+                  <th className="px-2 py-1 text-left font-bold dark:text-gray-100">W2 Sat Night Float</th>
                 </tr>
               </thead>
 
@@ -265,11 +265,15 @@ const exportCallFloatCSV = () => {
                   return (
                     <tr
                       key={i}
-                      className={`border-b border-gray-200 ${i % 2 === 0 ? 'bg-white' : 'bg-gray-50'}`}
+                      className={`border-b border-gray-200 dark:border-gray-700 ${
+                        i % 2 === 0
+                          ? 'bg-white dark:bg-gray-900'
+                          : 'bg-gray-50 dark:bg-gray-800'
+                      }`}
                     >
-                      <td className="px-2 py-1 font-semibold">Block {i + 1}</td>
+                      <td className="px-2 py-1 font-semibold dark:text-gray-100">Block {i + 1}</td>
 
-                      <td className="px-2 py-1 text-gray-700">
+                      <td className="px-2 py-1 text-gray-900 dark:text-gray-200 font-semibold">
                         {formatMD(sat1)} / {formatMD(addDays(sat1, 1))}
                       </td>
 
@@ -296,7 +300,7 @@ const exportCallFloatCSV = () => {
                         )}
                       </td>
 
-                      <td className="px-2 py-1 text-gray-700">
+                      <td className="px-2 py-1 text-gray-900 dark:text-gray-200 font-semibold">
                         {formatMD(sat2)} / {formatMD(addDays(sat2, 1))}
                       </td>
 
@@ -332,22 +336,22 @@ const exportCallFloatCSV = () => {
       </div>
 
       {stats && Array.isArray(fellows) && (
-        <div className="bg-white rounded border-2 border-gray-400 overflow-hidden">
-          <div className="px-3 py-2 bg-gray-100 border-b-2 border-gray-400">
-            <h3 className="font-bold text-sm">Call/Float Balance Check</h3>
-            <p className="text-[10px] text-gray-600">
+        <div className="bg-white dark:bg-gray-800 rounded border-2 border-gray-400 dark:border-gray-600 overflow-hidden">
+          <div className="px-3 py-2 bg-gray-100 dark:bg-gray-700 border-b-2 border-gray-400 dark:border-gray-600">
+            <h3 className="font-bold text-sm dark:text-gray-100">Call/Float Balance Check</h3>
+            <p className="text-[10px] text-gray-600 dark:text-gray-400">
               Green = at target. Yellow = under. Red = over. Use red to catch PGY-6 overages immediately.
             </p>
           </div>
 
           <div className="p-2">
-            <table className="w-full text-[10px]">
+            <table className="w-full text-xs">
               <thead>
-                <tr className="bg-gray-200 border-b border-gray-400">
-                  <th className="px-2 py-1 text-left font-bold">Fellow</th>
-                  <th className="px-2 py-1 text-center font-bold">PGY</th>
-                  <th className="px-2 py-1 text-center font-bold bg-blue-100">Call Target</th>
-                  <th className="px-2 py-1 text-center font-bold bg-blue-50">Call Actual</th>
+                <tr className="bg-gray-200 dark:bg-gray-700 border-b border-gray-400 dark:border-gray-600">
+                  <th className="px-2 py-1 text-left font-bold dark:text-gray-100">Fellow</th>
+                  <th className="px-2 py-1 text-center font-bold dark:text-gray-100">PGY</th>
+                  <th className="px-2 py-1 text-center font-bold bg-blue-100 dark:bg-blue-900 dark:text-blue-200">Call Target</th>
+                  <th className="px-2 py-1 text-center font-bold bg-blue-50 dark:bg-blue-950 dark:text-blue-100">Call Actual</th>
                   <th className="px-2 py-1 text-center font-bold">Status</th>
                   <th className="px-2 py-1 text-center font-bold bg-gray-100">Float Target</th>
                   <th className="px-2 py-1 text-center font-bold bg-gray-50">Float Actual</th>

@@ -1,20 +1,23 @@
 // src/App.jsx
-import React, { useState, useEffect, useCallback, useMemo } from "react";
-import { CheckCircle } from "lucide-react";
-import ScheduleView from "./components/ScheduleView";
-import StatsView from "./components/StatsView";
-import CallView from "./components/CallView";
-import CalendarView from "./components/CalendarView";
+import React, { useState, useEffect, useCallback, useMemo, lazy, Suspense } from "react";
+import CheckCircle from "lucide-react/dist/esm/icons/check-circle";
 import HeaderBar from "./components/HeaderBar";
-import ClinicCoverageView from "./components/ClinicCoverageView";
 import ImportExportBar from "./components/ImportExportBar";
-import LectureCalendarView from "./components/LectureCalendarView";
-import SpeakerTopicManager from "./components/SpeakerTopicManager";
-import GmailIntegration from "./components/GmailIntegration";
-import { initialSchedule, initialVacations, pgyLevels, clinicDays, blockDates } from "./data/scheduleData";
+import { initialSchedule, initialVacations, pgyLevels, clinicDays, blockDates, initialCallSchedule, initialNightFloatSchedule } from "./data/scheduleData";
 import { initialLectures, initialSpeakers, initialTopics } from "./data/lectureData";
 import { generateCallAndFloat as runGenerator } from "./engine/callFloatGenerator";
-import LandingPage from "./components/LandingPage";
+
+// ✅ LAZY LOAD ALL VIEWS
+const LandingPage = lazy(() => import("./components/LandingPage"));
+const ScheduleView = lazy(() => import("./components/ScheduleView"));
+const StatsView = lazy(() => import("./components/StatsView"));
+const CallView = lazy(() => import("./components/CallView"));
+const CalendarView = lazy(() => import("./components/CalendarView"));
+const ClinicCoverageView = lazy(() => import("./components/ClinicCoverageView"));
+const LectureCalendarView = lazy(() => import("./components/LectureCalendarView"));
+const SpeakerTopicManager = lazy(() => import("./components/SpeakerTopicManager"));
+const GmailIntegration = lazy(() => import("./components/GmailIntegration"));
+const VacationsView = lazy(() => import("./components/VacationsView"));
 
 const STORAGE_KEY = "fellowship_scheduler_v1";
 const LECTURE_STORAGE_KEY = "fellowship_lectures_v1";
@@ -47,6 +50,13 @@ const saveLectureData = (payload) => {
   localStorage.setItem(LECTURE_STORAGE_KEY, JSON.stringify(payload));
 };
 
+// Loading fallback component
+const ViewLoader = () => (
+  <div className="flex items-center justify-center min-h-[400px]">
+    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+  </div>
+);
+
 // Subtle footer
 const Footer = () => (
   <footer className="py-1 text-center text-[9px] text-gray-300">
@@ -76,6 +86,26 @@ export default function App() {
     } else {
       document.documentElement.classList.remove("dark");
     }
+    // Update favicon to match dark mode immediately. Replace the link element
+    // (some browsers only pick up new favicon elements, not href changes).
+    try {
+      const updateFavicon = (href) => {
+        const head = document.getElementsByTagName('head')[0];
+        if (!head) return;
+        const existing = document.getElementById('site-favicon') || head.querySelector('link[rel~="icon"]');
+        const el = document.createElement('link');
+        el.id = 'site-favicon';
+        el.rel = 'icon';
+        el.href = href;
+        // append new and remove old to force refresh
+        head.appendChild(el);
+        if (existing && existing !== el) head.removeChild(existing);
+      };
+
+      updateFavicon(darkMode ? '/favicon-dark.ico' : '/favicon-light.ico');
+    } catch (e) {
+      // ignore in non-browser environments
+    }
   }, [darkMode]);
 
   const [activeView, setActiveView] = useState("schedule");
@@ -99,13 +129,13 @@ export default function App() {
   const [callSchedule, setCallSchedule] = useState(
     persisted?.callSchedule && typeof persisted.callSchedule === "object"
       ? persisted.callSchedule
-      : {}
+      : initialCallSchedule
   );
 
   const [nightFloatSchedule, setNightFloatSchedule] = useState(
     persisted?.nightFloatSchedule && typeof persisted.nightFloatSchedule === "object"
       ? persisted.nightFloatSchedule
-      : {}
+      : initialNightFloatSchedule
   );
 
   // Lecture system state
@@ -247,49 +277,48 @@ export default function App() {
     return () => clearTimeout(t);
   }, [lectures, speakers, topics, fellowEmails]);
 
-  const calculateStats = useCallback(() => {
-    setStats((prev) => {
-      const counts = {};
-      fellows.forEach((f) => {
-        const pgy = pgyLevels[f];
-        counts[f] = {
-          ai: 0, ai2: 0, cath: 0, cath2: 0, echo: 0, echo2: 0, ep: 0,
-          floorA: 0, floorB: 0, icu: 0, nights: 0, nuclear: 0, nuclear2: 0,
-          cts: 0, research: 0, structural: 0, vascular: 0, admin: 0, spc: 0, sum: 0,
-          call: prev?.[f]?.call ?? 0,
-          float: prev?.[f]?.float ?? 0,
-          pgy,
-        };
+  // Build stats object synchronously from a schedule snapshot.
+  const buildCounts = (sched) => {
+    const counts = {};
+    fellows.forEach((f) => {
+      const pgy = pgyLevels[f];
+      counts[f] = {
+        ai: 0, ai2: 0, cath: 0, cath2: 0, echo: 0, echo2: 0, ep: 0,
+        floorA: 0, floorB: 0, icu: 0, nights: 0, nuclear: 0, nuclear2: 0,
+        cts: 0, research: 0, structural: 0, vascular: 0, admin: 0, spc: 0, sum: 0,
+        call: 0,
+        float: 0,
+        pgy,
+      };
 
-        schedule[f]?.forEach((rot) => {
-          if (!rot) return;
-          counts[f].sum++;
+      (sched[f] || []).forEach((rot) => {
+        if (!rot) return;
+        counts[f].sum++;
 
-          if (rot === "AI") counts[f].ai++;
-          else if (rot === "AI 2" || rot === "AI 3") counts[f].ai2++;
-          else if (rot === "Cath") counts[f].cath++;
-          else if (rot.includes("Cath 2") || rot.includes("Cath 3")) counts[f].cath2++;
-          else if (rot === "Echo") counts[f].echo++;
-          else if (rot === "Echo 2") counts[f].echo2++;
-          else if (rot === "EP") counts[f].ep++;
-          else if (rot === "Floor A") counts[f].floorA++;
-          else if (rot === "Floor B") counts[f].floorB++;
-          else if (rot === "ICU") counts[f].icu++;
-          else if (rot === "Nights") counts[f].nights++;
-          else if (rot === "Nuclear") counts[f].nuclear++;
-          else if (rot === "Nuclear 2") counts[f].nuclear2++;
-          else if (rot === "CTS") counts[f].cts++;
-          else if (rot.includes("Research")) counts[f].research++;
-          else if (rot === "Structural") counts[f].structural++;
-          else if (rot === "Vascular") counts[f].vascular++;
-          else if (rot === "Admin") counts[f].admin++;
-          else if (rot === "SPC") counts[f].spc++;
-        });
+        if (rot === "AI") counts[f].ai++;
+        else if (rot === "AI 2" || rot === "AI 3") counts[f].ai2++;
+        else if (rot === "Cath") counts[f].cath++;
+        else if (rot.includes("Cath 2") || rot.includes("Cath 3")) counts[f].cath2++;
+        else if (rot === "Echo") counts[f].echo++;
+        else if (rot === "Echo 2") counts[f].echo2++;
+        else if (rot === "EP") counts[f].ep++;
+        else if (rot === "Floor A") counts[f].floorA++;
+        else if (rot === "Floor B") counts[f].floorB++;
+        else if (rot === "ICU") counts[f].icu++;
+        else if (rot === "Nights") counts[f].nights++;
+        else if (rot === "Nuclear") counts[f].nuclear++;
+        else if (rot === "Nuclear 2") counts[f].nuclear2++;
+        else if (rot === "CTS") counts[f].cts++;
+        else if (rot.includes("Research")) counts[f].research++;
+        else if (rot === "Structural") counts[f].structural++;
+        else if (rot === "Vascular") counts[f].vascular++;
+        else if (rot === "Admin") counts[f].admin++;
+        else if (rot === "SPC") counts[f].spc++;
       });
-
-      return counts;
     });
-  }, [fellows, schedule]);
+
+    return counts;
+  };
 
   const generateCallAndFloat = useCallback(() => {
     const callTargets = { 4: 5, 5: 4, 6: 2 };
@@ -309,28 +338,48 @@ export default function App() {
     setNightFloatSchedule(result.nightFloatSchedule ?? {});
     setViolations(result.violations ?? []);
 
-    setStats((prev) => {
-      if (!prev) return prev;
-      const next = { ...prev };
-      fellows.forEach((f) => {
-        next[f] = {
-          ...next[f],
-          call: result.callCounts?.[f] ?? 0,
-          float: result.floatCounts?.[f] ?? 0,
-        };
-      });
-      return next;
+    // Build fresh stats from the current schedule and merge call/float counts
+    const fresh = buildCounts(schedule);
+    fellows.forEach((f) => {
+      fresh[f].call = result.callCounts?.[f] ?? 0;
+      fresh[f].float = result.floatCounts?.[f] ?? 0;
     });
+    setStats(fresh);
   }, [fellows, schedule]);
 
-  useEffect(() => {
-    calculateStats();
-  }, [calculateStats]);
+  // Small debounce utility for UI-triggered heavy actions so users can't spam-run generator
+  const debounce = (fn, wait = 500) => {
+    let timer = null;
+    return (...args) => {
+      if (timer) clearTimeout(timer);
+      timer = setTimeout(() => {
+        timer = null;
+        try {
+          fn(...args);
+        } catch (e) {
+          console.error('Debounced function error', e);
+        }
+      }, wait);
+    };
+  };
 
+  // Expose a debounced version for UI hooks (so clicking optimize repeatedly won't spam the generator)
+  const debouncedGenerate = useMemo(() => debounce(generateCallAndFloat, 750), [generateCallAndFloat]);
+
+  // Debounced stats calculation when schedule changes to avoid frequent heavy work
+  useEffect(() => {
+    const t = setTimeout(() => {
+      setStats(buildCounts(schedule));
+    }, 150);
+    return () => clearTimeout(t);
+  }, [schedule]);
+
+  // Run generator once on mount to produce initial call/float base output.
+  // Users can still optimize manually; this prevents repeated automatic runs.
   useEffect(() => {
     generateCallAndFloat();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [schedule]);
+  }, []);
 
   const resetToDefaults = useCallback(() => {
     localStorage.removeItem(STORAGE_KEY);
@@ -409,7 +458,11 @@ export default function App() {
   const [showLanding, setShowLanding] = useState(true);
 
   if (showLanding) {
-    return <LandingPage onEnter={() => setShowLanding(false)} />;
+    return (
+      <Suspense fallback={<ViewLoader />}>
+        <LandingPage onEnter={() => setShowLanding(false)} />
+      </Suspense>
+    );
   }
 
   return (
@@ -419,117 +472,132 @@ export default function App() {
         setActiveView={setActiveView}
         darkMode={darkMode}
         toggleDarkMode={toggleDarkMode}
+        onLogoClick={() => setShowLanding(true)}
       />
 
       <div className="p-3 pb-16">
-        {activeView === "schedule" && (
-          <ScheduleView
-            fellows={fellows}
-            schedule={schedule}
-            vacations={vacations}
-            onScheduleChange={setSchedule}
-            onVacationsChange={setVacations}
-          />
-        )}
-
-        {activeView === "stats" && <StatsView stats={stats} fellows={fellows} />}
-
-        {activeView === "call" && (
-          <CallView
-            callSchedule={callSchedule}
-            nightFloatSchedule={nightFloatSchedule}
-            stats={stats}
-            fellows={fellows}
-            pgyLevels={pgyLevels}
-            onOptimize={generateCallAndFloat}
-          />
-        )}
-
-        {activeView === "calendar" && (
-          <CalendarView
-            fellows={fellows}
-            schedule={schedule}
-            dateCallMap={dateCallMap}
-          />
-        )}
-
-        {activeView === "clinic" && (
-          <ClinicCoverageView
-            fellows={fellows}
-            schedule={schedule}
-            clinicDays={clinicDays}
-            pgyLevels={pgyLevels}
-            blockDates={blockDates}
-          />
-        )}
-
-        {activeView === "lectures" && (
-          <LectureCalendarView
-            lectures={lectures}
-            setLectures={setLectures}
-            speakers={speakers}
-            topics={topics}
-            fellows={fellows}
-            darkMode={darkMode}
-            onSendReminder={(lecture) => {
-              // This would trigger Gmail integration
-              console.log("Send reminder for:", lecture);
-            }}
-          />
-        )}
-
-        {activeView === "speakers" && (
-          <SpeakerTopicManager
-            speakers={speakers}
-            setSpeakers={setSpeakers}
-            topics={topics}
-            setTopics={setTopics}
-            darkMode={darkMode}
-          />
-        )}
-
-        {activeView === "gmail" && (
-          <GmailIntegration
-            lectures={lectures}
-            speakers={speakers}
-            fellows={fellows}
-            fellowEmails={fellowEmails}
-            darkMode={darkMode}
-            onReminderSent={handleReminderSent}
-          />
-        )}
-
-        {/* Global Import/Export/Reset bar */}
-        <div className={`mt-4 p-3 rounded border ${
-        darkMode ? "bg-gray-800 border-gray-700" : "bg-white border-gray-300"
-        }`}>
-        {/* Check Balance - only on call and clinic */}
-        {(activeView === "call" || activeView === "clinic") && (
-            <div className="mb-3 pb-3 border-b border-gray-200 dark:border-gray-700">
-            <button
-                onClick={checkBalance}
-                className="w-full sm:w-auto flex items-center justify-center gap-1 px-4 py-2 bg-green-600 hover:bg-green-700 text-white text-xs font-semibold rounded"
-            >
-                <CheckCircle className="w-3 h-3" />
-                Check Balance
-            </button>
-            </div>
-        )}
-        
-        {/* Import/Export - stacked on mobile */}
-        <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2">
-            <span className={`text-xs ${darkMode ? "text-gray-400" : "text-gray-500"}`}>
-            Import/Export
-            </span>
-            <ImportExportBar
-            fellows={fellows}
-            schedule={schedule}
-            setSchedule={setSchedule}
-            resetToDefaults={resetToDefaults}
-            violations={violations}
+        <Suspense fallback={<ViewLoader />}>
+          {activeView === "schedule" && (
+            <ScheduleView
+              fellows={fellows}
+              schedule={schedule}
+              vacations={vacations}
+              onScheduleChange={setSchedule}
+              onVacationsChange={setVacations}
             />
-        </div>
-        </div>
+          )}
+
+          {activeView === "stats" && <StatsView stats={stats} fellows={fellows} />}
+
+          {activeView === "call" && (
+            <CallView
+              callSchedule={callSchedule}
+              nightFloatSchedule={nightFloatSchedule}
+              stats={stats}
+              fellows={fellows}
+              pgyLevels={pgyLevels}
+              onOptimize={debouncedGenerate}
+            />
+          )}
+
+          {activeView === "calendar" && (
+            <CalendarView
+              fellows={fellows}
+              schedule={schedule}
+              dateCallMap={dateCallMap}
+            />
+          )}
+
+          {activeView === "clinic" && (
+            <ClinicCoverageView
+              fellows={fellows}
+              schedule={schedule}
+              clinicDays={clinicDays}
+              pgyLevels={pgyLevels}
+              blockDates={blockDates}
+            />
+          )}
+
+          {activeView === "lectures" && (
+            <LectureCalendarView
+              lectures={lectures}
+              setLectures={setLectures}
+              speakers={speakers}
+              topics={topics}
+              fellows={fellows}
+              darkMode={darkMode}
+              onSendReminder={(lecture) => {
+                console.log("Send reminder for:", lecture);
+              }}
+            />
+          )}
+
+          {activeView === "speakers" && (
+            <SpeakerTopicManager
+              speakers={speakers}
+              setSpeakers={setSpeakers}
+              topics={topics}
+              setTopics={setTopics}
+              darkMode={darkMode}
+            />
+          )}
+
+          {activeView === "gmail" && (
+            <GmailIntegration
+              lectures={lectures}
+              speakers={speakers}
+              fellows={fellows}
+              fellowEmails={fellowEmails}
+              darkMode={darkMode}
+              onReminderSent={handleReminderSent}
+            />
+          )}
+
+          {activeView === "vacRequests" && (
+            <VacationsView
+              fellows={fellows}
+              schedule={schedule}
+              vacations={vacations}
+              setSchedule={setSchedule}
+              setVacations={setVacations}
+              isAdmin={true}
+            />
+          )}
+        </Suspense>
+
+        {/* Global Import/Export/Reset bar - hidden on vacations */}
+        {activeView !== "vacRequests" && (
+          <div className={`mt-4 p-3 rounded border ${
+            darkMode ? "bg-gray-800 border-gray-700" : "bg-white border-gray-300"
+          }`}>
+            {/* Check Balance - only on call and clinic */}
+            {(activeView === "call" || activeView === "clinic") && (
+              <div className="mb-3 pb-3 border-b border-gray-200 dark:border-gray-700">
+                <button
+                  onClick={checkBalance}
+                  className="w-full sm:w-auto flex items-center justify-center gap-1 px-4 py-2 bg-green-600 hover:bg-green-700 text-white text-xs font-semibold rounded"
+                >
+                  <CheckCircle className="w-3 h-3" />
+                  Check Balance
+                </button>
+              </div>
+            )}
+            
+            {/* Import/Export - stacked on mobile */}
+            <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2">
+              <span className={`text-xs ${darkMode ? "text-gray-400" : "text-gray-500"}`}>
+                Import/Export
+              </span>
+              <ImportExportBar
+                fellows={fellows}
+                schedule={schedule}
+                setSchedule={setSchedule}
+                resetToDefaults={resetToDefaults}
+                violations={violations}
+              />
+            </div>
+          </div>
+        )}
       </div>
 
       <Footer />

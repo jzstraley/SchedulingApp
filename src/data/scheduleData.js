@@ -71,5 +71,64 @@ export const blockDates = [
 ];
 
 export const initialVacations = [
-  { fellow: 'Alkhawlani', startBlock: 3, endBlock: 4, reason: 'Vacation' }
+  { fellow: 'Alkhawlani', startBlock: 3, endBlock: 4, reason: 'Vacation', status: 'approved' }
 ];
+
+// Initial call and night-float base provided by user
+export const initialCallSchedule = {
+  'B1-W1': 'Elsayed', 'B1-W2': 'Sharma',
+  'B2-W1': 'Elsayed', 'B2-W2': 'Ezaldin',
+  'B3-W1': 'Alkhawlani', 'B3-W2': 'Ali',
+  'B4-W1': 'Alkhawlani', 'B4-W2': 'Ali',
+  'B5-W1': 'Straley', 'B5-W2': 'Mahmoud',
+  'B6-W1': 'Sharma', 'B6-W2': 'Ezaldin',
+  'B7-W1': 'Ali', 'B7-W2': 'Yousafzai',
+  'B8-W1': 'Elsayed', 'B8-W2': 'Alkhawlani',
+  'B9-W1': 'Yousafzai', 'B9-W2': 'Sharma',
+  'B10-W1': 'Ezaldin', 'B10-W2': 'Straley',
+  'B11-W1': 'Mahmoud', 'B11-W2': 'Alkhawlani',
+  'B12-W1': 'Varga', 'B12-W2': 'Ali',
+  'B13-W1': 'Selvam', 'B13-W2': 'Ezaldin',
+  'B14-W1': 'Elsayed', 'B14-W2': 'Alkhawlani',
+  'B15-W1': 'Varga', 'B15-W2': 'Naeem',
+  'B16-W1': 'Selvam', 'B16-W2': 'Varga',
+  'B17-W1': 'Elkholy', 'B17-W2': 'Sharma',
+  'B18-W1': 'Naeem', 'B18-W2': 'Ezaldin',
+  'B19-W1': 'Selvam', 'B19-W2': 'Nor',
+  'B20-W1': 'Elkholy', 'B20-W2': 'Selvam',
+  'B21-W1': 'Varga', 'B21-W2': 'Naeem',
+  'B22-W1': 'Nor', 'B22-W2': 'Naeem',
+  'B23-W1': 'Selvam', 'B23-W2': 'Elkholy',
+  'B24-W1': 'Varga', 'B24-W2': 'Elkholy',
+  'B25-W1': 'Naeem', 'B25-W2': 'Nor',
+  'B26-W1': 'Ali', 'B26-W2': 'Nor'
+};
+
+export const initialNightFloatSchedule = {
+  'B1-W1': 'Ezaldin', 'B1-W2': 'Alkhawlani',
+  'B2-W1': 'Sharma', 'B2-W2': 'Ali',
+  'B3-W1': 'Selvam', 'B3-W2': 'Elsayed',
+  'B4-W1': 'Selvam', 'B4-W2': 'Elsayed',
+  'B5-W1': 'Naeem', 'B5-W2': 'Ezaldin',
+  'B6-W1': 'Naeem', 'B6-W2': 'Yousafzai',
+  'B7-W1': 'Elkholy', 'B7-W2': 'Straley',
+  'B8-W1': 'Elkholy', 'B8-W2': 'Sharma',
+  'B9-W1': 'Nor', 'B9-W2': 'Ezaldin',
+  'B10-W1': 'Nor', 'B10-W2': 'Mahmoud',
+  'B11-W1': 'Varga', 'B11-W2': 'Nor',
+  'B12-W1': 'Alkhawlani', 'B12-W2': 'Sharma',
+  'B13-W1': 'Varga', 'B13-W2': 'Naeem',
+  'B14-W1': 'Ali', 'B14-W2': 'Varga',
+  'B15-W1': 'Elkholy', 'B15-W2': 'Selvam',
+  'B16-W1': 'Naeem', 'B16-W2': 'Yousafzai',
+  'B17-W1': 'Nor', 'B17-W2': 'Naeem',
+  'B18-W1': 'Elkholy', 'B18-W2': 'Ali',
+  'B19-W1': 'Varga', 'B19-W2': 'Elkholy',
+  'B20-W1': 'Nor', 'B20-W2': 'Elsayed',
+  'B21-W1': 'Selvam', 'B21-W2': 'Alkhawlani',
+  'B22-W1': 'Varga', 'B22-W2': 'Selvam',
+  'B23-W1': 'Mahmoud', 'B23-W2': 'Straley',
+  'B24-W1': 'Ali', 'B24-W2': 'Elsayed',
+  'B25-W1': 'Sharma', 'B25-W2': 'Alkhawlani',
+  'B26-W1': 'Ezaldin', 'B26-W2': 'Mahmoud'
+};

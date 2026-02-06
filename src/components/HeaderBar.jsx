@@ -7,6 +7,7 @@ export default function HeaderBar({
   setActiveView,
   darkMode,
   toggleDarkMode,
+  onLogoClick,
 }) {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
@@ -34,9 +35,9 @@ export default function HeaderBar({
           darkMode ? "border-gray-700" : "border-gray-300"
         }`}
       >
-        <h1 className="text-xl md:text-2xl font-extrabold tracking-tight leading-none">
+        <button onClick={onLogoClick} className="text-left text-xl md:text-2xl font-extrabold tracking-tight leading-none cursor-pointer">
           Fellow<span className="text-red-400 italic ml-[1px]">Shift</span>
-        </h1>
+        </button>
 
         <div className="flex items-center gap-2">
           <button

@@ -9,7 +9,7 @@ export default function LandingPage({ onEnter }) {
       <main className="flex-1 flex flex-col items-center justify-center px-6 py-20">
         {/* Icon */}
         <div className="mb-8">
-          <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-violet-500 to-indigo-600 flex items-center justify-center shadow-lg shadow-violet-500/25">
+          <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-red-500 to-rose-600 flex items-center justify-center shadow-lg shadow-red-500/25">
             <Calendar className="w-8 h-8 text-white" />
           </div>
         </div>
@@ -27,7 +27,7 @@ export default function LandingPage({ onEnter }) {
         {/* CTA Button */}
         <button
           onClick={onEnter}
-          className="group flex items-center gap-2 px-6 py-3 bg-white text-black font-medium rounded-lg hover:bg-gray-100 transition-all duration-200"
+          className="group flex items-center gap-2 px-6 py-3 bg-gradient-to-br from-red-500 to-rose-600 text-white font-medium rounded-lg hover:from-red-600 hover:to-rose-700 transition-all duration-200"
         >
           Enter Scheduler
           <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
