@@ -3,6 +3,7 @@ import React, { useState, useEffect, useCallback, useMemo, lazy, Suspense } from
 import CheckCircle from "lucide-react/dist/esm/icons/check-circle";
 import HeaderBar from "./components/HeaderBar";
 import ImportExportBar from "./components/ImportExportBar";
+import CookieConsent from "./components/CookieConsent";
 import { initialSchedule, initialVacations, pgyLevels, clinicDays, blockDates, initialCallSchedule, initialNightFloatSchedule } from "./data/scheduleData";
 import { initialLectures, initialSpeakers, initialTopics } from "./data/lectureData";
 import { generateCallAndFloat as runGenerator } from "./engine/callFloatGenerator";
@@ -601,6 +602,7 @@ export default function App() {
       </div>
 
       <Footer />
+      <CookieConsent />
     </div>
   );
 }

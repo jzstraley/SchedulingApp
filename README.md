@@ -91,4 +91,4 @@ Use "Reset to Defaults" to clear all data including lectures.
 
 ---
 
-© 2026 Austin Straley, DO
+© 2026 IMTechEd by Austin Straley, DO

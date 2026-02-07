@@ -8,6 +8,24 @@
     <meta name="description" content="Comprehensive cardiology schedule optimization tool for fellows." />
     <title>FellowShift</title>
     <!-- Use project root .ico files for tab icon (light/dark variants) -->
+
+    <!-- Google Analytics - loaded only after user consent -->
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('consent', 'default', {
+        'analytics_storage': 'denied'
+      });
+      if (localStorage.getItem('cookie_consent') === 'accepted') {
+        gtag('consent', 'update', { 'analytics_storage': 'granted' });
+        var s = document.createElement('script');
+        s.async = true;
+        s.src = 'https://www.googletagmanager.com/gtag/js?id=G-BXJRY8B4W5';
+        document.head.appendChild(s);
+        gtag('js', new Date());
+        gtag('config', 'G-BXJRY8B4W5');
+      }
+    </script>
   </head>
   <body>
     <div id="root"></div>
